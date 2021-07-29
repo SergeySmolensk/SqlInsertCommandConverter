@@ -1,11 +1,13 @@
 import re
 
 FULL_TAG_PATTERN_EXPRESSION = "['a-z]+:[^,)]*"
+ROLES_PATTERN_EXPRESSION = "'\[[\"\w\",\s]*]'"
 PREFIX_TAG_PATTERN_EXPRESSION = "TAG."
 USED_DELIMITER = ','
 FILE_NAME = "dbcreate.sql"
 TABLE_NAME = "all_tags"
 DEFAULT_ROLES = "'[\"admin\"]'"
+NEED_FIND_ROLES = False
 
 
 def createInsertScript(tag_info, table_name):
@@ -22,14 +24,20 @@ def createInsertScript(tag_info, table_name):
 
 def getTagsInfo(file_name):
     tags_info = []
+    searched_roles = None
     with open(file_name, 'r') as fileReader:
         file_info = fileReader.read()
-        search_result = re.findall(FULL_TAG_PATTERN_EXPRESSION, file_info)
-        for tag in search_result:
+        tags_result = re.findall(FULL_TAG_PATTERN_EXPRESSION, file_info)
+        if NEED_FIND_ROLES:
+            searched_roles = iter(re.findall(ROLES_PATTERN_EXPRESSION, file_info))
+        for tag in tags_result:
             tag_name = "'" + tag[7:]
             tags_info.append(tag_name)
             tags_info.append(getDataTypeCode(tag[1]))
             tags_info.append(DEFAULT_ROLES)
+        if NEED_FIND_ROLES:
+            for i in range(1, len(tags_info), 2):
+                tags_info[i] = next(searched_roles)
     return tags_info
 
 
